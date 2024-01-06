@@ -2284,6 +2284,22 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@lit-labs/ssr-dom-shim@npm:^1.0.0, @lit-labs/ssr-dom-shim@npm:^1.1.0":
+  version: 1.1.2
+  resolution: "@lit-labs/ssr-dom-shim@npm:1.1.2"
+  checksum: e51c7c156317ac95cac8d534d8608ac2a9dda7441f14f73e9e66a995d277851a90315324fe74690d1169a66dce645ed9674a8f5a9a467d183156de1c87549b23
+  languageName: node
+  linkType: hard
+
+"@lit/reactive-element@npm:^1.3.0, @lit/reactive-element@npm:^1.6.0":
+  version: 1.6.3
+  resolution: "@lit/reactive-element@npm:1.6.3"
+  dependencies:
+    "@lit-labs/ssr-dom-shim": "npm:^1.0.0"
+  checksum: 10f1d25e24e32feb21c4c6f9e11d062901241602e12c4ecf746b3138f87fed4d8394194645514d5c1bfd5f33f3fd56ee8ef41344e2cb4413c40fe4961ec9d419
+  languageName: node
+  linkType: hard
+
 "@mastodon/mastodon@workspace:.":
   version: 0.0.0-use.local
   resolution: "@mastodon/mastodon@workspace:."
@@ -2301,6 +2317,7 @@ __metadata:
     "@gamestdio/websocket": "npm:^0.3.2"
     "@github/webauthn-json": "npm:^2.1.1"
     "@material-symbols/svg-600": "npm:^0.14.0"
+    "@radixdlt/radix-dapp-toolkit": "npm:^1.3.0"
     "@rails/ujs": "npm:^7.1.1"
     "@reduxjs/toolkit": "npm:^1.9.5"
     "@svgr/webpack": "npm:^5.5.0"
@@ -2610,6 +2627,50 @@ __metadata:
   version: 2.11.8
   resolution: "@popperjs/core@npm:2.11.8"
   checksum: 4681e682abc006d25eb380d0cf3efc7557043f53b6aea7a5057d0d1e7df849a00e281cd8ea79c902a35a414d7919621fc2ba293ecec05f413598e0b23d5a1e63
+  languageName: node
+  linkType: hard
+
+"@radixdlt/babylon-gateway-api-sdk@npm:^1.2.0":
+  version: 1.2.0
+  resolution: "@radixdlt/babylon-gateway-api-sdk@npm:1.2.0"
+  checksum: ca54600e2acd776beb99c41c75e553ef9f0aed77c5e4616a352ce1ffc7fafabdcc8b1f0cfc8d7f1687c3ae2f720edecc8682c95f4e9406aa46885501cb5bde03
+  languageName: node
+  linkType: hard
+
+"@radixdlt/connect-button@npm:^1.0.1":
+  version: 1.0.1
+  resolution: "@radixdlt/connect-button@npm:1.0.1"
+  dependencies:
+    lit: "npm:^2.7.5"
+  checksum: 5d0555a9d80472618f9c4842151c5e79c3c3f69882ac3ab2d9ee2c59c143ea35639d9da2b50adc0dbc3a3d7d14287156bd979aed3dc875aa6d9bd094c051557c
+  languageName: node
+  linkType: hard
+
+"@radixdlt/radix-dapp-toolkit@npm:^1.3.0":
+  version: 1.4.0
+  resolution: "@radixdlt/radix-dapp-toolkit@npm:1.4.0"
+  dependencies:
+    "@radixdlt/babylon-gateway-api-sdk": "npm:^1.2.0"
+    "@radixdlt/connect-button": "npm:^1.0.1"
+    "@radixdlt/wallet-sdk": "npm:1.0.1"
+    immer: "npm:^10.0.2"
+    lodash.isequal: "npm:^4.5.0"
+    neverthrow: "npm:^6.0.0"
+    rxjs: "npm:^7.8.1"
+    zod: "npm:^3.21.4"
+  checksum: 178c0d54a3a501da574ec40533b5d438f7ce5c724a321ab482a137c011b25ff3a593f8e9e3901a6093e8dfc108ac5bcbadfbc5dee8508a53a53a9431a29df785
+  languageName: node
+  linkType: hard
+
+"@radixdlt/wallet-sdk@npm:1.0.1":
+  version: 1.0.1
+  resolution: "@radixdlt/wallet-sdk@npm:1.0.1"
+  dependencies:
+    neverthrow: "npm:^6.0.0"
+    rxjs: "npm:^7.8.1"
+    tslog: "npm:^4.8.2"
+    zod: "npm:^3.21.4"
+  checksum: f6ea95bdcb9d939f8af3ff9a8c51fef1adaa3d7af48cdc40b2835d959f03bacc0d0c5a70b74722059eb2f83d1265051c3b2f1161273132bf17b33fd39c79929b
   languageName: node
   linkType: hard
 
@@ -9063,6 +9124,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"immer@npm:^10.0.2":
+  version: 10.0.3
+  resolution: "immer@npm:10.0.3"
+  checksum: 282a4f8479a40f7d12b2b3243c095e3e892bf99058e2ffcdd6b8e9fd143e6a90f2717ab9b6c8b97c927ffb8054465c8f647056f41660dbfd672e240cf1063503
+  languageName: node
+  linkType: hard
+
 "immer@npm:^9.0.21":
   version: 9.0.21
   resolution: "immer@npm:9.0.21"
@@ -10875,6 +10943,37 @@ __metadata:
   languageName: node
   linkType: hard
 
+"lit-element@npm:^3.3.0":
+  version: 3.3.3
+  resolution: "lit-element@npm:3.3.3"
+  dependencies:
+    "@lit-labs/ssr-dom-shim": "npm:^1.1.0"
+    "@lit/reactive-element": "npm:^1.3.0"
+    lit-html: "npm:^2.8.0"
+  checksum: f44c12fa3423a4e9ca5b84651410687e14646bb270ac258325e6905affac64a575f041f8440377e7ebaefa3910b6f0d6b8b1e902cb1aa5d0849b3fdfbf4fb3b6
+  languageName: node
+  linkType: hard
+
+"lit-html@npm:^2.8.0":
+  version: 2.8.0
+  resolution: "lit-html@npm:2.8.0"
+  dependencies:
+    "@types/trusted-types": "npm:^2.0.2"
+  checksum: 90057dee050803823ac884c1355b0213ab8c05fbe2ec63943c694b61aade5d36272068f3925f45a312835e504f9c9784738ef797009f0a756a750351eafb52d5
+  languageName: node
+  linkType: hard
+
+"lit@npm:^2.7.5":
+  version: 2.8.0
+  resolution: "lit@npm:2.8.0"
+  dependencies:
+    "@lit/reactive-element": "npm:^1.6.0"
+    lit-element: "npm:^3.3.0"
+    lit-html: "npm:^2.8.0"
+  checksum: bf33c26b1937ee204aed1adbfa4b3d43a284e85aad8ea9763c7865365917426eded4e5888158b4136095ea42054812561fe272862b61775f1198fad3588b071f
+  languageName: node
+  linkType: hard
+
 "loader-runner@npm:^2.4.0":
   version: 2.4.0
   resolution: "loader-runner@npm:2.4.0"
@@ -11704,6 +11803,13 @@ __metadata:
   version: 2.6.2
   resolution: "neo-async@npm:2.6.2"
   checksum: c2f5a604a54a8ec5438a342e1f356dff4bc33ccccdb6dc668d94fe8e5eccfc9d2c2eea6064b0967a767ba63b33763f51ccf2cd2441b461a7322656c1f06b3f5d
+  languageName: node
+  linkType: hard
+
+"neverthrow@npm:^6.0.0":
+  version: 6.1.0
+  resolution: "neverthrow@npm:6.1.0"
+  checksum: 4983600d84879c6e3ddd5f50281371a24b548446138d7108a11a131ba32e87369e875c046817913a489cfa8fcc7d518f7968988973bd880f69817b018aae294e
   languageName: node
   linkType: hard
 
@@ -14431,6 +14537,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"rxjs@npm:^7.8.1":
+  version: 7.8.1
+  resolution: "rxjs@npm:7.8.1"
+  dependencies:
+    tslib: "npm:^2.1.0"
+  checksum: 3c49c1ecd66170b175c9cacf5cef67f8914dcbc7cd0162855538d365c83fea631167cacb644b3ce533b2ea0e9a4d0b12175186985f89d75abe73dbd8f7f06f68
+  languageName: node
+  linkType: hard
+
 "safe-array-concat@npm:^1.0.0, safe-array-concat@npm:^1.0.1":
   version: 1.0.1
   resolution: "safe-array-concat@npm:1.0.1"
@@ -16141,10 +16256,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tslib@npm:2.6.2, tslib@npm:^2.4.0, tslib@npm:^2.5.0, tslib@npm:^2.6.0":
+"tslib@npm:2.6.2, tslib@npm:^2.1.0, tslib@npm:^2.4.0, tslib@npm:^2.5.0, tslib@npm:^2.6.0":
   version: 2.6.2
   resolution: "tslib@npm:2.6.2"
   checksum: e03a8a4271152c8b26604ed45535954c0a45296e32445b4b87f8a5abdb2421f40b59b4ca437c4346af0f28179780d604094eb64546bee2019d903d01c6c19bdb
+  languageName: node
+  linkType: hard
+
+"tslog@npm:^4.8.2":
+  version: 4.9.2
+  resolution: "tslog@npm:4.9.2"
+  checksum: e53f139c140d0a5a8b9e10356e04451a07f7af20e7c02f71cdf6b490cde1b07d241ed4f12ed667e2c2a9c4599f90e3770135c3fd7edd0cc6554944be2785dca2
   languageName: node
   linkType: hard
 
@@ -17661,5 +17783,12 @@ __metadata:
   version: 0.3.1
   resolution: "zlibjs@npm:0.3.1"
   checksum: 2d110bfcb0f8b8dbf225423f6556da9c5bca95c8b849c1218983676158a24b5cd0350357e0c4d504e27f8c7e18d471d9712576f35114a81a51bcf83453f02beb
+  languageName: node
+  linkType: hard
+
+"zod@npm:^3.21.4":
+  version: 3.22.4
+  resolution: "zod@npm:3.22.4"
+  checksum: 7578ab283dac0eee66a0ad0fc4a7f28c43e6745aadb3a529f59a4b851aa10872b3890398b3160f257f4b6817b4ce643debdda4fb21a2c040adda7862cab0a587
   languageName: node
   linkType: hard

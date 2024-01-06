@@ -69,6 +69,7 @@ class ColumnHeader extends PureComponent {
     multiColumn: PropTypes.bool,
     extraButton: PropTypes.node,
     showBackButton: PropTypes.bool,
+    showRadixConnectButton: PropTypes.bool,
     children: PropTypes.node,
     pinned: PropTypes.bool,
     placeholder: PropTypes.bool,
@@ -115,7 +116,7 @@ class ColumnHeader extends PureComponent {
   };
 
   render () {
-    const { title, icon, iconComponent, active, children, pinned, multiColumn, extraButton, showBackButton, intl: { formatMessage }, placeholder, appendContent, collapseIssues } = this.props;
+    const { title, icon, iconComponent, active, children, pinned, multiColumn, extraButton, showBackButton, showRadixConnectButton, intl: { formatMessage }, placeholder, appendContent, collapseIssues } = this.props;
     const { collapsed, animating } = this.state;
 
     const wrapperClassName = classNames('column-header__wrapper', {
@@ -203,6 +204,7 @@ class ColumnHeader extends PureComponent {
             {hasTitle && backButton}
             {extraButton}
             {collapseButton}
+            {showRadixConnectButton && <radix-connect-button />}
           </div>
         </h1>
 

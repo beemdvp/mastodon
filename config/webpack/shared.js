@@ -61,7 +61,20 @@ module.exports = {
   },
 
   module: {
-    rules: Object.keys(rules).map(key => rules[key]),
+    rules: [
+      ...Object.keys(rules).map(key => rules[key]),
+      {
+        test: /radix-dapp-toolkit.mjs$/,
+        use: {
+          loader: 'babel-loader',
+          options: {
+            cacheDirectory: join(settings.cache_path, 'babel-loader'),
+            cacheCompression: env.NODE_ENV === 'production',
+            compact: env.NODE_ENV === 'production',
+          },
+        }
+      }
+    ],
     strictExportPresence: true,
   },
 

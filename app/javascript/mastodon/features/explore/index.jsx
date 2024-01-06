@@ -10,6 +10,7 @@ import { connect } from 'react-redux';
 
 import { ReactComponent as SearchIcon } from '@material-symbols/svg-600/outlined/search.svg';
 import { ReactComponent as TagIcon } from '@material-symbols/svg-600/outlined/tag.svg';
+import { RadixDappToolkit, RadixNetwork } from '@radixdlt/radix-dapp-toolkit';
 
 import Column from 'mastodon/components/column';
 import ColumnHeader from 'mastodon/components/column_header';
@@ -44,12 +45,25 @@ class Explore extends PureComponent {
     isSearching: PropTypes.bool,
   };
 
+  rdt = RadixDappToolkit({
+    dAppDefinitionAddress:
+    'account_tdx_e_128uml7z6mqqqtm035t83alawc3jkvap9sxavecs35ud3ct20jxxuhl',
+    networkId: RadixNetwork.Stokenet,
+    applicationName: 'Radix Web3 dApp',
+    applicationVersion: '1.0.0',
+  });
+
   handleHeaderClick = () => {
     this.column.scrollTop();
   };
 
   setRef = c => {
     this.column = c;
+  };
+
+  handleShowRadixButton = () => {
+    this.rdt.buttonApi.setTheme('black');
+    return true;
   };
 
   render() {
@@ -60,6 +74,7 @@ class Explore extends PureComponent {
       <Column bindToDocument={!multiColumn} ref={this.setRef} label={intl.formatMessage(messages.title)}>
         <ColumnHeader
           icon={isSearching ? 'search' : 'hashtag'}
+          showRadixConnectButton={this.handleShowRadixButton()}
           iconComponent={isSearching ? SearchIcon : TagIcon}
           title={intl.formatMessage(isSearching ? messages.searchResults : messages.title)}
           onClick={this.handleHeaderClick}

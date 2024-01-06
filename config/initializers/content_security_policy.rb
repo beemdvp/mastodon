@@ -9,8 +9,8 @@
 require_relative '../../app/lib/content_security_policy'
 
 policy = ContentSecurityPolicy.new
-assets_host = policy.assets_host
-media_hosts = policy.media_hosts
+assets_host = "#{policy.assets_host} radixdlt.com *.radixdlt.com"
+media_hosts = "#{policy.media_hosts} radixdlt.com *.radixdlt.com"
 
 def sso_host
   return unless ENV['ONE_CLICK_SSO_LOGIN'] == 'true'
@@ -35,9 +35,9 @@ Rails.application.config.content_security_policy do |p|
   p.default_src     :none
   p.frame_ancestors :none
   p.font_src        :self, assets_host
-  p.img_src         :self, :data, :blob, *media_hosts
-  p.style_src       :self, assets_host
-  p.media_src       :self, :data, *media_hosts
+  p.img_src         :self, :https, :data, :blob, *media_hosts, assets_host
+  p.style_src       :self, :unsafe_inline
+  p.media_src       :self, :https, :data, *media_hosts, assets_host
   p.frame_src       :self, :https
   p.manifest_src    :self, assets_host
 
@@ -67,9 +67,9 @@ end
 # https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy-Report-Only
 # Rails.application.config.content_security_policy_report_only = true
 
-Rails.application.config.content_security_policy_nonce_generator = ->(_request) { SecureRandom.base64(16) }
+# Rails.application.config.content_security_policy_nonce_generator = ->(_request) { SecureRandom.base64(16) }
 
-Rails.application.config.content_security_policy_nonce_directives = %w(style-src)
+# Rails.application.config.content_security_policy_nonce_directives = %w(style-src)
 
 Rails.application.reloader.to_prepare do
   PgHero::HomeController.content_security_policy do |p|

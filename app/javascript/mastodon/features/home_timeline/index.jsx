@@ -202,6 +202,7 @@ class HomeTimeline extends PureComponent {
         <ColumnHeader
           icon='home'
           iconComponent={HomeIcon}
+          showRadixConnectButton
           active={hasUnread}
           title={intl.formatMessage(messages.title)}
           onPin={this.handlePin}

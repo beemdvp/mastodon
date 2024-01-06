@@ -29,6 +29,7 @@ class Auth::SessionsController < Devise::SessionsController
       # called from one of the two-factor or sign-in token
       # authentication methods
 
+      Rails.logger.info('creating fooooooo ################################')
       on_authentication_success(resource, :password) unless @on_authentication_success_called
     end
   end
