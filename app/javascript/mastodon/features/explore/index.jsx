@@ -10,7 +10,7 @@ import { connect } from 'react-redux';
 
 import { ReactComponent as SearchIcon } from '@material-symbols/svg-600/outlined/search.svg';
 import { ReactComponent as TagIcon } from '@material-symbols/svg-600/outlined/tag.svg';
-import { RadixDappToolkit, RadixNetwork } from '@radixdlt/radix-dapp-toolkit';
+import { RadixDappToolkit, RadixNetwork , DataRequestBuilder } from '@radixdlt/radix-dapp-toolkit';
 
 import Column from 'mastodon/components/column';
 import ColumnHeader from 'mastodon/components/column_header';
@@ -31,6 +31,7 @@ const messages = defineMessages({
 const mapStateToProps = state => ({
   layout: state.getIn(['meta', 'layout']),
   isSearching: state.getIn(['search', 'submitted']) || !trendsEnabled,
+  signedIn: !!state.getIn(['meta', 'me']),
 });
 
 class Explore extends PureComponent {
@@ -43,15 +44,49 @@ class Explore extends PureComponent {
     intl: PropTypes.object.isRequired,
     multiColumn: PropTypes.bool,
     isSearching: PropTypes.bool,
+    signedIn: PropTypes.bool,
   };
 
   rdt = RadixDappToolkit({
     dAppDefinitionAddress:
-    'account_tdx_e_128uml7z6mqqqtm035t83alawc3jkvap9sxavecs35ud3ct20jxxuhl',
+    'account_tdx_2_12yf9gd53yfep7a669fv2t3wm7nz9zeezwd04n02a433ker8vza6rhe',
     networkId: RadixNetwork.Stokenet,
     applicationName: 'Radix Web3 dApp',
     applicationVersion: '1.0.0',
   });
+
+  constructor() {
+    super();
+
+    console.log(this);
+
+    this.rdt.walletApi.setRequestData(
+      DataRequestBuilder.accounts().exactly(1).withProof(),
+      DataRequestBuilder.persona().withProof(),
+      DataRequestBuilder.personaData().emailAddresses(),
+    );
+
+    const getChallenge = () =>
+      fetch('http://localhost:4000/create-challenge')
+        .then((res) => res.json())
+        .then((res) => res.challenge);
+
+    this.rdt.walletApi.provideChallengeGenerator(getChallenge);
+
+    this.rdt.walletApi.dataRequestControl(async ({ proofs, personaData, persona }) => {
+      const { valid } = await fetch('http://localhost:4000/verify', {
+        method: 'POST',
+        body: JSON.stringify([...proofs, { personaData }, { persona }]),
+        headers: { 'content-type': 'application/json' },
+      }).then((res) => res.json());
+
+      console.log('account verified ', valid);
+
+      if (!valid) {
+        this.rdt.disconnect();
+      }
+    });
+  }
 
   handleHeaderClick = () => {
     this.column.scrollTop();
@@ -63,7 +98,7 @@ class Explore extends PureComponent {
 
   handleShowRadixButton = () => {
     this.rdt.buttonApi.setTheme('black');
-    return true;
+    return this.isSignedIn;
   };
 
   render() {

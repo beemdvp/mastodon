@@ -18,6 +18,9 @@
         = f.input :display_name, wrapper: :with_block_label, input_html: { maxlength: 30, data: { default: @account.username } }
 
       .fields-group
+        = f.input :account_address, wrapper: :with_block_label, input_html: { maxlength: 500 }
+
+      .fields-group
         = f.input :note, wrapper: :with_block_label, input_html: { maxlength: 500 }
 
     .fields-row__column.fields-group.fields-row__column-6

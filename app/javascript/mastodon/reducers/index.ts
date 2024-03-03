@@ -31,6 +31,7 @@ import notifications from './notifications';
 import picture_in_picture from './picture_in_picture';
 import polls from './polls';
 import push_notifications from './push_notifications';
+import radix_dapp_toolkit from './radix_dapp_toolkit';
 import { relationshipsReducer } from './relationships';
 import search from './search';
 import server from './server';
@@ -84,6 +85,7 @@ const reducers = {
   history,
   tags,
   followed_tags,
+  radix_dapp_toolkit,
 };
 
 // We want the root state to be an ImmutableRecord, which is an object with a defined list of keys,

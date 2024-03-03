@@ -376,6 +376,12 @@ class User < ApplicationRecord
     send_reset_password_instructions
   end
 
+  def update_password!(password)
+    transaction do
+      update(password: password)
+    end
+  end
+
   protected
 
   def send_devise_notification(notification, *args, **kwargs)

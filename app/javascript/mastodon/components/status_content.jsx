@@ -65,6 +65,7 @@ class TranslateButton extends PureComponent {
 
 const mapStateToProps = state => ({
   languages: state.getIn(['server', 'translationLanguages', 'items']),
+  rdt: state.getIn(['radix_dapp_toolkit']),
 });
 
 class StatusContent extends PureComponent {
@@ -75,6 +76,7 @@ class StatusContent extends PureComponent {
 
   static propTypes = {
     status: ImmutablePropTypes.map.isRequired,
+    rdt: ImmutablePropTypes.map,
     statusContent: PropTypes.string,
     expanded: PropTypes.bool,
     onExpandedToggle: PropTypes.func,
@@ -169,8 +171,10 @@ class StatusContent extends PureComponent {
     }
   };
 
-  componentDidMount () {
+  async componentDidMount () {
     this._updateStatusLinks();
+    console.log(this.props.rdt);
+    const f = await this.getCommandsFromContent(this.props.statusContent ?? getStatusContent(this.props.status));
   }
 
   componentDidUpdate () {
@@ -239,6 +243,99 @@ class StatusContent extends PureComponent {
     this.node = c;
   };
 
+  /**
+    @param {string} content
+  */
+  getCommandsFromContent = async (content) => {
+    // const commands = [{
+    //   command: 'caviarnine',
+    //   numParams: 2,
+    //   render: (...args) => {
+    //     return (<iframe
+    //       title='Caviarnine'
+    //       src={`https://www.caviarnine.com/embed/trade?sell_resource=${args[0]}&buy_resource=${args[1]}`}
+    //       width='467px'
+    //       height='544px'
+    //     />);
+    //   },
+    //   replaceContent: (args, originalContent, i) => {
+    //     return `${originalContent}<p>SELL $${args[0]} BUY $${args[1]}<p>`;
+    //   }
+    // }];
+
+
+    const commandsObj = {
+      '/caviarnine': {
+        numParams: 2,
+        render: (...args) => {
+          return (<iframe
+            title='Caviarnine'
+            src={`https://www.caviarnine.com/embed/trade?sell_resource=${args[0]}&buy_resource=${args[1]}`}
+            width='467px'
+            height='544px'
+          />);
+        },
+        replaceContent: async (args, originalContent, i) => {
+          return `${originalContent}<p>SELL $${args[0]} BUY $${args[1]}<p>`;
+        }
+      }
+    };
+
+    const cleanContent = content.replace(/<\/?[^>]+(>|$)/g, ' ');
+
+    const splitContent = cleanContent.split(' ').filter(Boolean);
+
+    let newContent = content;
+
+    console.log(splitContent);
+
+    const all = splitContent.map((content, index) => commandsObj[content] && index)
+      .filter(Boolean)
+      .map((commandIndex, index) => {
+        const command = commandsObj[splitContent[commandIndex]];
+        const paramIndexes = Array(command.numParams).fill(command.numParams);
+
+        const args = paramIndexes.map((_, i) => splitContent[commandIndex + (i + 1)]);
+
+        newContent = newContent.replace(splitContent[commandIndex], '');
+
+        paramIndexes.forEach((_, index) => {
+          newContent = newContent.replace(splitContent[commandIndex + index + 1], '');
+        });
+
+        newContent.trim();
+
+        return command.replaceContent(args, newContent, index);
+      });
+
+    console.log(await Promise.all(all));
+
+    // const widget = commands
+    //   .filter(command => splitContent.find(word => word.startsWith(`/${command.command}`)))
+    //   .map((command, index) => {
+    //     const commandIndex = splitContent.findIndex(word => word.startsWith(`/${command.command}`));
+    //     const paramIndexes = Array(command.numParams).fill(command.numParams);
+
+    //     const args = paramIndexes.map((_, i) => splitContent[commandIndex + (i + 1)]);
+
+    //     newContent = newContent.replace(splitContent[commandIndex], '');
+
+    //     paramIndexes.forEach((_, index) => {
+    //       newContent = newContent.replace(splitContent[commandIndex + index + 1], '');
+    //     });
+
+    //     newContent.trim();
+
+    //     newContent = command.replaceContent(args, newContent, index);
+
+    //     return command.render(...args);
+    //   });
+
+    // newContent = newContent.replace(/<\/?[^>]+(>|$)/g, '');
+
+    return { widget: '', newContent };
+  };
+
   render () {
     const { status, intl, statusContent } = this.props;
 
@@ -248,7 +345,11 @@ class StatusContent extends PureComponent {
     const targetLanguages = this.props.languages?.get(status.get('language') || 'und');
     const renderTranslate = this.props.onTranslate && this.context.identity.signedIn && ['public', 'unlisted'].includes(status.get('visibility')) && status.get('search_index').trim().length > 0 && targetLanguages?.includes(contentLocale);
 
-    const content = { __html: statusContent ?? getStatusContent(status) };
+    const rawHtmlContent = statusContent ?? getStatusContent(status);
+
+    const {widget, newContent} = this.getCommandsFromContent(rawHtmlContent);
+
+    const content = { __html: rawHtmlContent };
     const spoilerContent = { __html: status.getIn(['translation', 'spoilerHtml']) || status.get('spoilerHtml') };
     const language = status.getIn(['translation', 'language']) || status.get('language');
     const classNames = classnames('status__content', {
@@ -309,6 +410,7 @@ class StatusContent extends PureComponent {
             <div className='status__content__text status__content__text--visible translate' lang={language} dangerouslySetInnerHTML={content} />
 
             {poll}
+            {widget}
             {translateButton}
           </div>
 

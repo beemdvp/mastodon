@@ -2,12 +2,14 @@
 
 class Auth::SessionsController < Devise::SessionsController
   layout 'auth'
+  include Redisable
 
   skip_before_action :check_self_destruct!
   skip_before_action :require_no_authentication, only: [:create]
   skip_before_action :require_functional!
   skip_before_action :update_user_sign_in
 
+  # prepend_before_action :update_password!, only: [:create]
   prepend_before_action :check_suspicious!, only: [:create]
 
   include Auth::TwoFactorAuthenticationConcern
@@ -24,14 +26,12 @@ class Auth::SessionsController < Devise::SessionsController
   end
 
   def create
-    super do |resource|
-      # We only need to call this if this hasn't already been
-      # called from one of the two-factor or sign-in token
-      # authentication methods
+    user = find_user
+    deleted = redis.del("challenge:#{user_params[:password]}")
 
-      Rails.logger.info('creating fooooooo ################################')
-      on_authentication_success(resource, :password) unless @on_authentication_success_called
-    end
+    Rails.logger.info "Deleted #{deleted} keys" if deleted.positive?
+    on_authentication_success(user, :password) unless @on_authentication_success_called
+    redirect_to after_sign_in_path_for(user) unless deleted == 0
   end
 
   def destroy

@@ -2,9 +2,16 @@
 
 const fs = require('fs');
 const http = require('http');
+const {
+  generateKeyPair,
+  randomBytes,
+  createHash
+} = require('node:crypto');
 const path = require('path');
 const url = require('url');
 
+const { Rola, NetworkId } = require('@radixdlt/rola');
+const bodyParser = require('body-parser');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const express = require('express');
@@ -15,6 +22,7 @@ const pg = require('pg');
 const dbUrlToConfig = require('pg-connection-string').parse;
 const uuid = require('uuid');
 const WebSocket = require('ws');
+const { ResultAsync } = require('neverthrow');
 
 const { setupMetrics } = require('./metrics');
 const { isTruthy } = require("./utils");
@@ -181,6 +189,147 @@ const CHANNEL_NAMES = [
   ...PUBLIC_CHANNELS
 ];
 
+const secureRandom = (byteCount) =>
+  randomBytes(byteCount).toString('hex');
+
+const fetchUsername = (pgPool, username) => {
+  return new Promise((resolve, reject) => {
+    pgPool.connect((err, client, done) => {
+      if (err || !client) {
+        reject(err);
+        return;
+      }
+
+      client.query(`
+SELECT username
+FROM accounts
+WHERE username = $1 LIMIT 1
+`, [username], (err, result) => {
+        done();
+
+        if (err) {
+          reject(err);
+          return;
+        }
+
+        resolve(result.rows);
+      });
+    });
+  });
+};
+
+const createKeyPair = () => {
+  return new Promise((resolve, reject) => {
+    generateKeyPair('rsa', {
+      modulusLength: 4096,
+      publicKeyEncoding: {
+        type: 'spki',
+        format: 'pem',
+      },
+      privateKeyEncoding: {
+        type: 'pkcs8',
+        format: 'pem',
+        cipher: 'aes-256-cbc',
+        passphrase: 'top secret',
+      },
+    }, (err, publicKey, privateKey) => {
+    // Handle errors and use the generated key pair.
+      if (err) {
+        reject(err);
+        return;
+      }
+
+      resolve({ publicKey, privateKey });
+    });
+  });
+};
+
+
+const newAccountFromPersona = async (pgPool, username, displayName) => {
+  const { publicKey, privateKey } = await createKeyPair();
+
+  return new Promise((resolve, reject) => {
+    pgPool.connect((err, client, done) => {
+      if (err || !client) {
+        reject(err);
+        return;
+      }
+
+      client.query(`
+INSERT INTO "accounts"
+  (username, display_name, private_key, public_key, created_at, updated_at)
+VALUES
+  ($1, $2, $3, $4, now(), now());
+`, [username, displayName, privateKey, publicKey], (err, result) => {
+        done();
+
+        if (err) {
+          reject(err);
+          return;
+        }
+
+        resolve(result.rows);
+      });
+    });
+  });
+};
+
+const newUserFromPersona = (pgPool, username, displayName, privateKey, publicKey, email) => {
+  return new Promise((resolve, reject) => {
+    pgPool.connect((err, client, done) => {
+      if (err || !client) {
+        reject(err);
+        return;
+      }
+
+      client.query(`
+WITH inserted_rows AS (
+  INSERT INTO "accounts"
+    (username, display_name, private_key, public_key, created_at, updated_at)
+  VALUES
+    ($1, $2, $3, $4, now(), now())
+  RETURNING id
+)
+INSERT INTO "users"
+  (account_id, email, created_at, updated_at, admin, locale, chosen_languages)
+SELECT inserted_rows.id, $5, now(), now(), false, 'en', '{en}'
+FROM inserted_rows;
+`, [username, displayName, privateKey, publicKey, email], (err, result) => {
+        done();
+
+        if (err) {
+          console.log('ACCOUNT CREATION ERROR ', err);
+          reject(err);
+          return;
+        }
+
+        resolve(result.rows);
+      });
+    });
+  });
+};
+
+
+const fetchToken = (username, password) => {
+  const formData = new URLSearchParams();
+  formData.append('authenticity_token', '');
+  formData.append('user[email]', username);
+  formData.append('password[password]', '');
+
+  return fetch("http://localhost:3000/auth/sign_in", {
+    "headers": {
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+      "accept-language": "en-GB,en-US;q=0.9,en;q=0.8",
+      "cache-control": "max-age=0",
+      "content-type": "application/x-www-form-urlencoded",
+      "Referer": "http://localhost:3000/auth/sign_in",
+      "Referrer-Policy": "strict-origin-when-cross-origin"
+    },
+    "body": formData.toString(),
+    "method": "POST"
+  });
+};
+
 const startServer = async () => {
   const app = express();
 
@@ -189,6 +338,103 @@ const startServer = async () => {
   const pgPool = new pg.Pool(pgConfigFromEnv(process.env));
   const server = http.createServer(app);
   app.use(cors());
+
+  const jsonParser = bodyParser.json();
+
+  // A simple in-memory store for challenges. A database should be used in production.
+  const ChallengeStore = () => {
+    const create = () => {
+      const challenge = secureRandom(32); // 32 random bytes as hex string
+      const expires = Date.now() + 1000 * 60 * 5; // expires in 5 minutes
+
+      console.log('creating challenge ', `${redisPrefix}challenge:${challenge}`);
+      redisClient.set(`${redisPrefix}challenge:${challenge}`, expires, 'EX', expires);
+
+      return challenge;
+    };
+
+    const verify = async (input) => {
+      const expiry = await redisClient.get(`${redisPrefix}challenge:${input}`);
+
+      if (!expiry) return false;
+
+      const isValid = expiry > Date.now(); // check if challenge has expired
+
+      return isValid;
+    };
+
+    return { create, verify };
+  };
+
+  const challengeStore = ChallengeStore();
+
+  const { verifySignedChallenge } = Rola({
+    applicationName: 'Selfi.social',
+    dAppDefinitionAddress:
+    'account_tdx_2_12yf9gd53yfep7a669fv2t3wm7nz9zeezwd04n02a433ker8vza6rhe', // address of the dApp definition
+    networkId: NetworkId.Stokenet, // network id of the Radix network
+    expectedOrigin: 'http://localhost:3000', // origin of the client making the wallet request
+  });
+
+  app.get('/create-challenge', (req, res) => {
+    res.send({ challenge: challengeStore.create() });
+  });
+
+  app.post(
+    '/verify',
+    jsonParser,
+    async (req, res) => {
+      const challenges = [
+        ...req.body
+          .filter(r => r.challenge)
+          .reduce((acc, curr) => acc.add(curr.challenge), new Set())
+          .values(),
+      ];
+
+      const isChallengeValid = await Promise.all(challenges.map((challenge) =>
+        challengeStore.verify(challenge)
+      ));
+
+      console.log('isChallengeValid ', isChallengeValid);
+      if (!isChallengeValid.every(Boolean)) return res.send({ valid: false });
+
+      const result = await ResultAsync.combine(
+        req.body.filter(r => r.challenge).map((signedChallenge) => {
+          console.log('verifySignedChallenge ', signedChallenge);
+          return verifySignedChallenge(signedChallenge);
+        })
+      );
+
+      if (result.isErr()) {
+        console.log('Error signing', result);
+        return res.send({ valid: false });
+      }
+
+      const [personaWithProof, accountWithProof, personaData, persona] = req.body;
+
+      console.log('personaWithProof', personaWithProof.challenge);
+      console.log('personaData', personaData);
+      console.log('persona', persona);
+
+      // await redisClient.del(`${redisPrefix}challenge:${personaWithProof.challenge}`);
+
+      // hash and slice due to limitation in username string length
+      const username = persona.persona.label;
+
+      // query for username
+      const accountFound = await fetchUsername(pgPool, username);
+
+      const password = accountWithProof.challenge;
+
+      const email = personaData.personaData[0].fields[0];
+
+      if (!accountFound ||!accountFound.length) {
+        return res.status(200).send({ valid: true, type: 'SIGN_UP', username, email, password, password_confirmation: password });
+      } else {
+        return res.status(200).send({ valid: true, type: 'SIGN_IN', email, password });
+      }
+    }
+  );
 
   /**
    * @type {Object.<string, Array.<function(Object<string, any>): void>>}
@@ -367,12 +613,16 @@ const startServer = async () => {
    */
   const accountFromToken = (token, req) => new Promise((resolve, reject) => {
     pgPool.connect((err, client, done) => {
-      if (err) {
+      if (err || !client) {
         reject(err);
         return;
       }
 
-      client.query('SELECT oauth_access_tokens.id, oauth_access_tokens.resource_owner_id, users.account_id, users.chosen_languages, oauth_access_tokens.scopes, devices.device_id FROM oauth_access_tokens INNER JOIN users ON oauth_access_tokens.resource_owner_id = users.id LEFT OUTER JOIN devices ON oauth_access_tokens.id = devices.access_token_id WHERE oauth_access_tokens.token = $1 AND oauth_access_tokens.revoked_at IS NULL LIMIT 1', [token], (err, result) => {
+      client.query(`
+SELECT oauth_access_tokens.id, oauth_access_tokens.resource_owner_id, users.account_id, users.chosen_languages, oauth_access_tokens.scopes, devices.device_id
+FROM oauth_access_tokens INNER JOIN users ON oauth_access_tokens.resource_owner_id = users.id LEFT OUTER JOIN devices ON oauth_access_tokens.id = devices.access_token_id
+WHERE oauth_access_tokens.token = $1 AND oauth_access_tokens.revoked_at IS NULL LIMIT 1
+`, [token], (err, result) => {
         done();
 
         if (err) {
@@ -459,6 +709,11 @@ const startServer = async () => {
    * @returns {Promise.<void>}
    */
   const checkScopes = (req, channelName) => new Promise((resolve, reject) => {
+    if (!channelName) {
+      reject(new Error('Missing channel name'));
+      return;
+    }
+
     log.silly(req.requestId, `Checking OAuth scopes for ${channelName}`);
 
     // When accessing public channels, no scopes are needed
@@ -575,6 +830,11 @@ const startServer = async () => {
    */
   const authenticationMiddleware = (req, res, next) => {
     if (req.method === 'OPTIONS') {
+      next();
+      return;
+    }
+
+    if (req.path === '/verify' || req.path === '/create-challenge') {
       next();
       return;
     }
