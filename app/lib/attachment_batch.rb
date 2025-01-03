@@ -37,7 +37,7 @@ class AttachmentBatch
 
   def clear
     remove_files
-    batch.update_all(nullified_attributes) # rubocop:disable Rails/SkipsModelValidations
+    batch.update_all(nullified_attributes)
   end
 
   private
@@ -77,10 +77,22 @@ class AttachmentBatch
           when :fog
             logger.debug { "Deleting #{attachment.path(style)}" }
 
+            retries = 0
             begin
               attachment.send(:directory).files.new(key: attachment.path(style)).destroy
-            rescue Fog::Storage::OpenStack::NotFound
-              # Ignore failure to delete a file that has already been deleted
+            rescue Fog::OpenStack::Storage::NotFound
+              logger.debug "Will ignore because file is not found #{attachment.path(style)}"
+            rescue => e
+              retries += 1
+
+              if retries < MAX_RETRY
+                logger.debug "Retry #{retries}/#{MAX_RETRY} after #{e.message}"
+                sleep 2**retries
+                retry
+              else
+                logger.error "Batch deletion from fog failed after #{e.message}"
+                raise e
+              end
             end
           when :azure
             logger.debug { "Deleting #{attachment.path(style)}" }

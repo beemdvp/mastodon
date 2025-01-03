@@ -1,11 +1,11 @@
 import { RadixDappToolkit, RadixNetwork , DataRequestBuilder } from '@radixdlt/radix-dapp-toolkit';
 import Rails from '@rails/ujs';
 
-import 'font-awesome/css/font-awesome.css';
 import { logOut } from './utils/log_out';
 
+
 export function start() {
-  require.context('../images/', true);
+  require.context('../images/', true, /\.(jpg|png|svg)$/);
 
   const rdt = RadixDappToolkit({
     dAppDefinitionAddress:
@@ -26,7 +26,7 @@ export function start() {
   );
 
   const getChallenge = () =>
-    fetch('http://localhost:4000/create-challenge')
+    fetch('/create-challenge')
       .then((res) => res.json())
       .then((res) => res.challenge);
 
@@ -60,7 +60,7 @@ export function start() {
 
   try {
     Rails.start();
-  } catch (e) {
+  } catch {
     // If called twice
   }
 }

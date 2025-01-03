@@ -1,6 +1,10 @@
 # frozen_string_literal: true
 
 class Auth::SessionsController < Devise::SessionsController
+  include Redisable
+
+  MAX_2FA_ATTEMPTS_PER_HOUR = 10
+
   layout 'auth'
   include Redisable
 
@@ -14,24 +18,18 @@ class Auth::SessionsController < Devise::SessionsController
 
   include Auth::TwoFactorAuthenticationConcern
 
-  before_action :set_body_classes
-
   content_security_policy only: :new do |p|
     p.form_action(false)
   end
 
-  def check_suspicious!
-    user = find_user
-    @login_is_suspicious = suspicious_sign_in?(user) unless user.nil?
-  end
-
   def create
-    user = find_user
-    deleted = redis.del("challenge:#{user_params[:password]}")
+    super do |resource|
+      # We only need to call this if this hasn't already been
+      # called from one of the two-factor or sign-in token
+      # authentication methods
 
-    Rails.logger.info "Deleted #{deleted} keys" if deleted.positive?
-    on_authentication_success(user, :password) unless @on_authentication_success_called
-    redirect_to after_sign_in_path_for(user) unless deleted == 0
+      on_authentication_success(resource, :password) unless @on_authentication_success_called
+    end
   end
 
   def destroy
@@ -100,8 +98,9 @@ class Auth::SessionsController < Devise::SessionsController
 
   private
 
-  def set_body_classes
-    @body_classes = 'lighter'
+  def check_suspicious!
+    user = find_user
+    @login_is_suspicious = suspicious_sign_in?(user) unless user.nil?
   end
 
   def home_paths(resource)
@@ -131,9 +130,23 @@ class Auth::SessionsController < Devise::SessionsController
     session.delete(:attempt_user_updated_at)
   end
 
+  def clear_2fa_attempt_from_user(user)
+    redis.del(second_factor_attempts_key(user))
+  end
+
+  def check_second_factor_rate_limits(user)
+    attempts, = redis.multi do |multi|
+      multi.incr(second_factor_attempts_key(user))
+      multi.expire(second_factor_attempts_key(user), 1.hour)
+    end
+
+    attempts >= MAX_2FA_ATTEMPTS_PER_HOUR
+  end
+
   def on_authentication_success(user, security_measure)
     @on_authentication_success_called = true
 
+    clear_2fa_attempt_from_user(user)
     clear_attempt_from_session
 
     user.update_sign_in!(new_sign_in: true)
@@ -164,5 +177,27 @@ class Auth::SessionsController < Devise::SessionsController
       ip: request.remote_ip,
       user_agent: request.user_agent
     )
+
+    # Only send a notification email every hour at most
+    return if redis.get("2fa_failure_notification:#{user.id}").present?
+
+    redis.set("2fa_failure_notification:#{user.id}", '1', ex: 1.hour)
+
+    UserMailer.failed_2fa(user, request.remote_ip, request.user_agent, Time.now.utc).deliver_later!
+  end
+
+  def second_factor_attempts_key(user)
+    "2fa_auth_attempts:#{user.id}:#{Time.now.utc.hour}"
+  end
+
+  def respond_to_on_destroy
+    respond_to do |format|
+      format.json do
+        render json: {
+          redirect_to: after_sign_out_path_for(resource_name),
+        }, status: 200
+      end
+      format.all { super }
+    end
   end
 end

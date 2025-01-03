@@ -30,10 +30,7 @@ module Mastodon::CLI
       it at the root.
     LONG_DESC
     def add(*domains)
-      if domains.empty?
-        say('No domain(s) given', :red)
-        exit(1)
-      end
+      fail_with_message 'No domain(s) given' if domains.empty?
 
       skipped = 0
       processed = 0
@@ -49,7 +46,7 @@ module Mastodon::CLI
         if options[:with_dns_records]
           Resolv::DNS.open do |dns|
             dns.timeouts = 5
-            other_domains = dns.getresources(@email_domain_block.domain, Resolv::DNS::Resource::IN::MX).to_a
+            other_domains = dns.getresources(domain, Resolv::DNS::Resource::IN::MX).to_a.map { |e| e.exchange.to_s }.compact_blank
           end
         end
 
@@ -76,10 +73,7 @@ module Mastodon::CLI
 
     desc 'remove DOMAIN...', 'Remove e-mail domain blocks'
     def remove(*domains)
-      if domains.empty?
-        say('No domain(s) given', :red)
-        exit(1)
-      end
+      fail_with_message 'No domain(s) given' if domains.empty?
 
       skipped = 0
       processed = 0

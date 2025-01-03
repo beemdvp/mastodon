@@ -6,4 +6,11 @@ body {
   }
 
   --radix-connect-button-border-radius: 4px;
+
+  .radix-connect-button-container {
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding-bottom:20px;
+  }
 }

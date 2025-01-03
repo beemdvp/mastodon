@@ -2,7 +2,7 @@
 
 require 'rails_helper'
 
-RSpec.describe 'Favourites' do
+RSpec.describe 'Favourites', :inline_jobs do
   let(:user)    { Fabricate(:user) }
   let(:scopes)  { 'write:favourites' }
   let(:token)   { Fabricate(:accessible_access_token, resource_owner_id: user.id, scopes: scopes) }
@@ -18,17 +18,15 @@ RSpec.describe 'Favourites' do
     it_behaves_like 'forbidden for wrong scope', 'read read:favourites'
 
     context 'with public status' do
-      it 'favourites the status successfully', :aggregate_failures do
+      it 'favourites the status successfully and includes updated json', :aggregate_failures do
         subject
 
         expect(response).to have_http_status(200)
+        expect(response.content_type)
+          .to start_with('application/json')
         expect(user.account.favourited?(status)).to be true
-      end
 
-      it 'returns json with updated attributes' do
-        subject
-
-        expect(body_as_json).to match(
+        expect(response.parsed_body).to match(
           a_hash_including(id: status.id.to_s, favourites_count: 1, favourited: true)
         )
       end
@@ -41,6 +39,8 @@ RSpec.describe 'Favourites' do
         subject
 
         expect(response).to have_http_status(404)
+        expect(response.content_type)
+          .to start_with('application/json')
       end
     end
 
@@ -55,6 +55,8 @@ RSpec.describe 'Favourites' do
         subject
 
         expect(response).to have_http_status(200)
+        expect(response.content_type)
+          .to start_with('application/json')
         expect(user.account.favourited?(status)).to be true
       end
     end
@@ -66,11 +68,13 @@ RSpec.describe 'Favourites' do
         subject
 
         expect(response).to have_http_status(401)
+        expect(response.content_type)
+          .to start_with('application/json')
       end
     end
   end
 
-  describe 'POST /api/v1/statuses/:status_id/unfavourite', :sidekiq_fake do
+  describe 'POST /api/v1/statuses/:status_id/unfavourite' do
     subject do
       post "/api/v1/statuses/#{status.id}/unfavourite", headers: headers
     end
@@ -84,20 +88,16 @@ RSpec.describe 'Favourites' do
         FavouriteService.new.call(user.account, status)
       end
 
-      it 'unfavourites the status successfully', :aggregate_failures do
+      it 'unfavourites the status successfully and includes updated json', :aggregate_failures do
         subject
 
         expect(response).to have_http_status(200)
-        expect(user.account.favourited?(status)).to be true
+        expect(response.content_type)
+          .to start_with('application/json')
 
-        UnfavouriteWorker.drain
         expect(user.account.favourited?(status)).to be false
-      end
 
-      it 'returns json with updated attributes' do
-        subject
-
-        expect(body_as_json).to match(
+        expect(response.parsed_body).to match(
           a_hash_including(id: status.id.to_s, favourites_count: 0, favourited: false)
         )
       end
@@ -109,20 +109,16 @@ RSpec.describe 'Favourites' do
         status.account.block!(user.account)
       end
 
-      it 'unfavourites the status successfully', :aggregate_failures do
+      it 'unfavourites the status successfully and includes updated json', :aggregate_failures do
         subject
 
         expect(response).to have_http_status(200)
-        expect(user.account.favourited?(status)).to be true
+        expect(response.content_type)
+          .to start_with('application/json')
 
-        UnfavouriteWorker.drain
         expect(user.account.favourited?(status)).to be false
-      end
 
-      it 'returns json with updated attributes' do
-        subject
-
-        expect(body_as_json).to match(
+        expect(response.parsed_body).to match(
           a_hash_including(id: status.id.to_s, favourites_count: 0, favourited: false)
         )
       end
@@ -133,6 +129,8 @@ RSpec.describe 'Favourites' do
         subject
 
         expect(response).to have_http_status(200)
+        expect(response.content_type)
+          .to start_with('application/json')
       end
     end
 
@@ -143,6 +141,8 @@ RSpec.describe 'Favourites' do
         subject
 
         expect(response).to have_http_status(404)
+        expect(response.content_type)
+          .to start_with('application/json')
       end
     end
   end
