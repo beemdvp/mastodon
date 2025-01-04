@@ -3,14 +3,12 @@
 class Auth::RegistrationsController < Devise::RegistrationsController
   include RegistrationHelper
   include Auth::RegistrationSpamConcern
-  include Redisable
 
   layout :determine_layout
 
   before_action :set_invite, only: [:new, :create]
   before_action :check_enabled_registrations, only: [:new, :create]
   before_action :configure_sign_up_params, only: [:create]
-  before_action :verify_and_delete_radix_challenge, only: [:create]
   before_action :set_sessions, only: [:edit, :update]
   before_action :set_strikes, only: [:edit, :update]
   before_action :require_not_suspended!, only: [:update]
@@ -61,14 +59,6 @@ class Auth::RegistrationsController < Devise::RegistrationsController
     resource.sign_up_ip             = request.remote_ip
 
     resource.build_account if resource.account.nil?
-  end
-
-  def verify_and_delete_radix_challenge
-    deleted = redis.del("challenge:#{params[:user][:password]}")
-
-    Rails.logger.info "Challenge deleted: #{deleted > 0}"
-
-    redirect_to '/auth/sign_up', status: 422 if deleted == 0
   end
 
   def configure_sign_up_params

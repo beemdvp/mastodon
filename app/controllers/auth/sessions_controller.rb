@@ -6,14 +6,12 @@ class Auth::SessionsController < Devise::SessionsController
   MAX_2FA_ATTEMPTS_PER_HOUR = 10
 
   layout 'auth'
-  include Redisable
 
   skip_before_action :check_self_destruct!
   skip_before_action :require_no_authentication, only: [:create]
   skip_before_action :require_functional!
   skip_before_action :update_user_sign_in
 
-  # prepend_before_action :update_password!, only: [:create]
   prepend_before_action :check_suspicious!, only: [:create]
 
   include Auth::TwoFactorAuthenticationConcern
