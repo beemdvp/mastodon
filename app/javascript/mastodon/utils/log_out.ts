@@ -7,8 +7,10 @@ export async function logOut() {
       { headers: { Accept: 'application/json' }, withCredentials: true },
     );
 
-    if (response.status === 200 && response.data.redirect_to)
+    if (response.status === 200 && response.data.redirect_to) {
+      (window as (Window & typeof globalThis & { rdt: { disconnect: () => void }})).rdt.disconnect();
       window.location.href = response.data.redirect_to;
+    }
     else
       console.error(
         'Failed to log out, got an unexpected non-redirect response from the server',

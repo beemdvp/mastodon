@@ -10,10 +10,12 @@
 
 - unless omniauth_only?
   = simple_form_for(resource, as: resource_name, url: session_path(resource_name)) do |f|
-    %h1.title= t('auth.sign_in.title', domain: site_hostname)
-    %p.lead= t('auth.sign_in.preamble_html', domain: site_hostname)
+    %h2.title= t('auth.sign_in.radix_title')
+    %p.lead= t('auth.sign_in.radix_preamble_html', domain: site_hostname)
     %div(class='radix-connect-button-container')
       %radix-connect-button
+    %h1.title= t('auth.sign_in.title', domain: site_hostname)
+    %p.lead= t('auth.sign_in.preamble_html', domain: site_hostname)
     .fields-group
       - if use_seamless_external_login?
         = f.input :email,

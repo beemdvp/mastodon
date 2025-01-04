@@ -23,7 +23,14 @@
     = theme_color_tags current_theme
     %meta{ name: 'mobile-web-app-capable', content: 'yes' }/
 
+    :javascript
+      window.ROLA_ENV = #{ ENV['ROLA_ENV'] }
+      window.ROLA_DAPP_DEFINITION_ADDRESS = "#{ ENV['ROLA_DAPP_DEFINITION_ADDRESS'] }"
+      window.ROLA_APPLICATION_NAME = "#{ ENV['ROLA_APPLICATION_NAME'] }"
+      window.ROLA_APPLICATION_VERSION = "#{ ENV['ROLA_APPLICATION_VERSION'] }"
+
     %title= html_title
+
 
     = theme_style_tags current_theme
     -# Needed for the wicg-inert polyfill. It needs to be on it's own <style> tag, with this `id`

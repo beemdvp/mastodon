@@ -1150,6 +1150,9 @@ en-GB:
     sign_in:
       preamble_html: Log in with your <strong>%{domain}</strong> credentials. If your account is hosted on a different server, you will not be able to log in here.
       title: Log in to %{domain}
+      radix_title: Radix Login
+      radix_preamble_html: "%{domain} will create an account and sign in for you. Your personal label\/nickname is your username and an email is required."
+      normal_title: Standard Login
     sign_up:
       manual_review: Sign-ups on %{domain} go through manual review by our moderators. To help us process your registration, write a bit about yourself and why you want an account on %{domain}.
       preamble: With an account on this Mastodon server, you'll be able to follow any other person on the network, regardless of where their account is hosted.
