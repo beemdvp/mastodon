@@ -7,11 +7,18 @@ const color = '#292938';
 
 export function start() {
   require.context('../images/', true, /\.(jpg|png|svg)$/);
+
+  const getRolaState = () => {
+    return JSON.parse(document.getElementById('rola-state').textContent);
+  };
+
+  const rolaState = getRolaState();
+
   const rdt = RadixDappToolkit({
-    dAppDefinitionAddress: window.ROLA_DAPP_DEFINITION_ADDRESS, // address of the dApp definition,
-    networkId: window.ROLA_ENV,
-    applicationName: window.ROLA_APPLICATION_NAME,
-    applicationVersion: window.ROLA_APPLICATION_VERSION,
+    dAppDefinitionAddress: rolaState.ROLA_DAPP_DEFINITION_ADDRESS, // address of the dApp definition,
+    networkId: rolaState.ROLA_ENV,
+    applicationName: rolaState.ROLA_APPLICATION_NAME,
+    applicationVersion: rolaState.ROLA_APPLICATION_VERSION,
   });
 
   if (window.location.pathname === '/auth/sign_in') {
@@ -19,7 +26,7 @@ export function start() {
   }
 
   rdt.walletApi.setRequestData(
-    DataRequestBuilder.accounts().exactly(1).withProof(),
+    DataRequestBuilder.accounts().atLeast(1).withProof(),
     DataRequestBuilder.persona().withProof(),
     DataRequestBuilder.personaData().emailAddresses(),
   );

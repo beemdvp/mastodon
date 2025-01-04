@@ -23,11 +23,13 @@
     = theme_color_tags current_theme
     %meta{ name: 'mobile-web-app-capable', content: 'yes' }/
 
-    :javascript
-      window.ROLA_ENV = #{ ENV['ROLA_ENV'] }
-      window.ROLA_DAPP_DEFINITION_ADDRESS = "#{ ENV['ROLA_DAPP_DEFINITION_ADDRESS'] }"
-      window.ROLA_APPLICATION_NAME = "#{ ENV['ROLA_APPLICATION_NAME'] }"
-      window.ROLA_APPLICATION_VERSION = "#{ ENV['ROLA_APPLICATION_VERSION'] }"
+    %script{:id => 'rola-state', :type => 'application/json'}
+      {
+      "ROLA_ENV":#{ ENV['ROLA_ENV'] },
+      "ROLA_DAPP_DEFINITION_ADDRESS":"#{ ENV['ROLA_DAPP_DEFINITION_ADDRESS'] }",
+      "ROLA_APPLICATION_NAME":"#{ ENV['ROLA_APPLICATION_NAME'] }",
+      "ROLA_APPLICATION_VERSION":"#{ ENV['ROLA_APPLICATION_VERSION'] }"
+      }
 
     %title= html_title
 
