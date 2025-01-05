@@ -18,7 +18,7 @@ Rails.application.config.content_security_policy do |p|
   p.frame_ancestors :none
   p.font_src        :self, assets_host, "*.radixdlt.com"
   p.img_src         :self, :data, :blob, *media_hosts, "*.radixdlt.com"
-  p.style_src       :self, assets_host, "*.radixdlt.com radixdlt.com"
+  p.style_src       :self, :unsafe_inline, assets_host, "*.radixdlt.com radixdlt.com"
   p.media_src       :self, :data, *media_hosts, "*.radixdlt.com"
   p.manifest_src    :self, assets_host
 
@@ -40,7 +40,7 @@ Rails.application.config.content_security_policy do |p|
     p.frame_src   :self, :https, :http, "localhost:4000 *.radixdlt.com"
   else
     p.connect_src :self, :data, :blob, *media_hosts, Rails.configuration.x.streaming_api_base_url, "*.radixdlt.com"
-    p.script_src  :self, assets_host, "'wasm-unsafe-eval'", "*.radixdlt.com"
+    p.script_src  :self, :unsafe_inline, assets_host, "'wasm-unsafe-eval'", "*.radixdlt.com"
     p.frame_src   :self, :https, "*.radixdlt.com"
   end
 end
@@ -50,9 +50,9 @@ end
 # https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy-Report-Only
 # Rails.application.config.content_security_policy_report_only = true
 
-Rails.application.config.content_security_policy_nonce_generator = ->(_request) { SecureRandom.base64(16) }
+# Rails.application.config.content_security_policy_nonce_generator = ->(_request) { SecureRandom.base64(16) }
 
-Rails.application.config.content_security_policy_nonce_directives = %w(style-src)
+# Rails.application.config.content_security_policy_nonce_directives = %w(style-src)
 
 Rails.application.reloader.to_prepare do
   PgHero::HomeController.content_security_policy do |p|
