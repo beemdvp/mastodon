@@ -4,13 +4,30 @@ import {
   createDecipheriv,
   createCipheriv,
 } from 'node:crypto';
+import path from 'node:path';
+import url from 'node:url';
 
 import { Rola } from '@radixdlt/rola';
+import dotenv from 'dotenv';
 import { createRestAPIClient } from 'masto';
 import { ResultAsync } from 'neverthrow';
 
 import { redisConfig, redisClient, pgPool } from './index.js';
 import { logger } from './logging.js';
+
+const environment = process.env.NODE_ENV || 'development';
+
+// Correctly detect and load .env or .env.production file based on environment:
+const dotenvFile = environment === 'production' ? '.env.production' : '.env';
+const dotenvFilePath = path.resolve(
+  url.fileURLToPath(
+    new URL(path.join('..', dotenvFile), import.meta.url)
+  )
+);
+
+dotenv.config({
+  path: dotenvFilePath
+});
 
 const secureRandom = (byteCount) =>
   randomBytes(byteCount).toString('hex');
@@ -169,7 +186,7 @@ export const ChallengeStore = () => {
 const { verifySignedChallenge } = Rola({
   applicationName: process.env.ROLA_APPLICATION_NAME,
   dAppDefinitionAddress: process.env.ROLA_DAPP_DEFINITION_ADDRESS, // address of the dApp definition
-  networkId: +process.env.ROLA_ENV, // network id of the Radix network
+  networkId: +(process.env.ROLA_ENV || 1), // network id of the Radix network
   expectedOrigin: process.env.ROLA_EXPECTED_ORIGIN, // origin of the client making the wallet request
 });
 
