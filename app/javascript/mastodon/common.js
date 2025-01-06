@@ -1,4 +1,4 @@
-import { RadixDappToolkit, DataRequestBuilder } from '@radixdlt/radix-dapp-toolkit';
+import { RadixDappToolkit, DataRequestBuilder, Logger } from '@radixdlt/radix-dapp-toolkit';
 import Rails from '@rails/ujs';
 
 const color = '#292938';
@@ -15,6 +15,7 @@ export function start() {
   const url = window.location.origin.includes('localhost') ? 'http://localhost:4000' : rolaState.ROLA_API_ENDPOINT;
 
   const rdt = RadixDappToolkit({
+    logger: Logger(),
     dAppDefinitionAddress: rolaState.ROLA_DAPP_DEFINITION_ADDRESS, // address of the dApp definition,
     networkId: rolaState.ROLA_ENV,
     applicationName: rolaState.ROLA_APPLICATION_NAME,
