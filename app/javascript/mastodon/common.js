@@ -27,9 +27,12 @@ export function start() {
   }
 
   rdt.walletApi.setRequestData(
-    DataRequestBuilder.accounts().atLeast(1).withProof(),
     DataRequestBuilder.persona().withProof(),
     DataRequestBuilder.personaData().emailAddresses(),
+  );
+
+  rdt.walletApi.sendOneTimeRequest(
+    DataRequestBuilder.accounts().atLeast(1).withProof(),
   );
 
   const getChallenge = () =>
@@ -44,7 +47,9 @@ export function start() {
       method: 'POST',
       body: JSON.stringify([...proofs, { personaData }, { persona }]),
       headers: { 'content-type': 'application/json' },
-    }).then((res) => res.json());
+    }).then((res) => res.json()).catch(() => {
+      return { valid: false };
+    });
 
     if (!valid) {
       rdt.disconnect();

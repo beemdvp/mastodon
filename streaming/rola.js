@@ -225,11 +225,12 @@ export const verifyController =  async (req, res) => {
 
   const [personaWithProof, _accountWithProof, personaData, persona] = req.body;
 
-  logger.info(personaWithProof.challenge, 'personaWithProof');
-  logger.info(personaData, 'personaData');
-  logger.info(persona, 'persona');
+  if (!personaWithProof ||!personaData ||!persona) {
+    logger.error('Invalid request');
+    return res.status(401).send({ valid: false, error: 'Invalid request' });
+  }
 
-  // await redisClient.del(`${redisPrefix}challenge:${personaWithProof.challenge}`);
+  await redisClient.del(`${redisConfig.namespace}challenge:${personaWithProof.challenge}`);
 
   // hash and slice due to limitation in username string length
   const username = persona.persona.label;
