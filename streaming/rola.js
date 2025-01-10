@@ -287,3 +287,42 @@ export const verifyController =  async (req, res) => {
     return res.status(200).send({ valid: true, email: rolaInfo[0].email, password: decryptData(rolaInfo[0].password) });
   }
 };
+
+export const tokenController = async (req, res) => {
+  const url = 'https://mastodon.selfi.social/oauth/token';
+  const formData = new FormData();
+
+  if (!req.body.code) {
+    logger.info('no code provided in request');
+    return res.status(401).send({ ok: false });
+  }
+
+  formData.append('client_id', process.env.SELFI_CLIENT_ID);
+  formData.append('client_secret', process.env.SELFI_CLIENT_SECRET);
+  formData.append('redirect_uri', 'https://x.com');
+  formData.append('grant_type', 'authorization_code');
+  formData.append('code', req.body.code);
+  formData.append('scope', 'read write push');
+
+  const token = await fetch(url, {
+    method: 'POST',
+    body: formData,
+  })
+    .then(response => response.json())
+    .then(data => {
+      return data.access_token;
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      return null;
+    });
+
+  if (!token) {
+    logger.info('Failed to get access token');
+    return res.status(401).send({ ok: false });
+  }
+
+  return res
+    .status(200)
+    .send({ ok: true, access_token: token });
+};
