@@ -297,7 +297,7 @@ export const tokenController = async (req, res) => {
     return res.status(401).send({ ok: false });
   }
 
-  formData.append('client_id', process.env.SELFI_CLIENT_ID);
+  formData.append('client_id', process.env.SELFI_CLIENT_KEY);
   formData.append('client_secret', process.env.SELFI_CLIENT_SECRET);
   formData.append('redirect_uri', 'https://x.com');
   formData.append('grant_type', 'authorization_code');
