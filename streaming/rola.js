@@ -152,7 +152,7 @@ const insertSocialLinkInfo = async (pgPool, xId, mastodonId) => {
       }
 
       client.query(`
-INSERT INTO social_links (x_id, mastodon_id, created_at, updated_at)
+INSERT INTO socials_links (x_id, mastodon_id, created_at, updated_at)
 VALUES ($1, $2, $3, $4)
 `, [xId, mastodonId, new Date().toISOString(), new Date().toISOString()], (err, result) => {
         done();
@@ -178,7 +178,7 @@ const getMastodonIdFromX = async (pgPool, xId) => {
 
       client.query(`
 SELECT mastodon_id
-FROM rola_infos
+FROM socials_links
 WHERE x_id = $1 LIMIT 1
       `, [xId], (err, result) => {
         done();
@@ -204,7 +204,7 @@ const getXIdFromMastodonId = async (pgPool, mastodonId) => {
 
       client.query(`
 SELECT x_id
-FROM rola_infos
+FROM socials_links
 WHERE mastodon_id = $1 LIMIT 1
       `, [mastodonId], (err, result) => {
         done();
