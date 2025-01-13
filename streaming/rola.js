@@ -449,7 +449,7 @@ export const newSocialLinkController = async (req, res) => {
     return res.status(401).send({ ok: false });
   }
 
-  return res.status(200);
+  return res.status(200).send({ ok: true });
 };
 
 export const getSocialId = async (req, res) => {
@@ -490,6 +490,6 @@ export const getSocialId = async (req, res) => {
 
     return res.status(401).send({ ok: true, mastodonId });
   } else {
-    return res.status(400);
+    return res.status(400).send({ ok: false });
   }
 };
