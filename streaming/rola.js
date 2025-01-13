@@ -143,6 +143,83 @@ WHERE persona = $1 LIMIT 1
   });
 };
 
+const insertSocialLinkInfo = async (pgPool, xId, mastodonId) => {
+  return new Promise((resolve, reject) => {
+    pgPool.connect((err, client, done) => {
+      if (err || !client) {
+        reject(err);
+        return;
+      }
+
+      client.query(`
+INSERT INTO social_links (x_id, mastodon_id, created_at, updated_at)
+VALUES ($1, $2, $3, $4)
+`, [xId, mastodonId, new Date().toISOString(), new Date().toISOString()], (err, result) => {
+        done();
+
+        if (err) {
+          reject(err);
+          return;
+        }
+
+        resolve(result.rows);
+      });
+    });
+  });
+};
+
+const getMastodonIdFromX = async (pgPool, xId) => {
+  return new Promise((resolve, reject) => {
+    pgPool.connect((err, client, done) => {
+      if (err || !client) {
+        reject(err);
+        return;
+      }
+
+      client.query(`
+SELECT mastodon_id
+FROM rola_infos
+WHERE x_id = $1 LIMIT 1
+      `, [xId], (err, result) => {
+        done();
+
+        if (err) {
+          reject(err);
+          return;
+        }
+
+        resolve(result.rows);
+      });
+    });
+  });
+};
+
+const getXIdFromMastodonId = async (pgPool, mastodonId) => {
+  return new Promise((resolve, reject) => {
+    pgPool.connect((err, client, done) => {
+      if (err || !client) {
+        reject(err);
+        return;
+      }
+
+      client.query(`
+SELECT x_id
+FROM rola_infos
+WHERE mastodon_id = $1 LIMIT 1
+      `, [mastodonId], (err, result) => {
+        done();
+
+        if (err) {
+          reject(err);
+          return;
+        }
+
+        resolve(result.rows);
+      });
+    });
+  });
+};
+
 export const deleteMastodonAccount = async (accountId) => {
   return fetch(`${process.env.SELFI_MASTODON_API_URL}/api/v1/accounts/${accountId}`, {
     method: 'DELETE',
@@ -325,4 +402,94 @@ export const tokenController = async (req, res) => {
   return res
     .status(200)
     .send({ ok: true, access_token: token });
+};
+
+export const verifyMastodonUser = async (req) => {
+  const client = createRestAPIClient({
+    url: process.env.SELFI_MASTODON_API_URL,
+    accessToken: req.headers.Authorization || req.headers.authorization,
+  });
+
+  const validatedMastodon = await client.v1.accounts.verifyCredentials().catch((e) => {
+    logger.error(e, 'failed to validate mastodon credentials');
+    return null;
+  });
+
+  return validatedMastodon;
+};
+
+export const newSocialLinkController = async (req, res) => {
+  const validateMastodon = await verifyMastodonUser(req);
+
+  if (!validateMastodon) {
+    logger.info('Failed to validate mastodon credentials');
+    return res.status(401).send({ ok: false });
+  }
+
+  const { mastodonId, xId } = req.body;
+
+  if (!mastodonId) {
+    logger.info('no mastodon id provided in request');
+    return res.status(401).send({ ok: false });
+  }
+
+  if (!xId) {
+    logger.info('no x id provided in request');
+    return res.status(401).send({ ok: false });
+  }
+
+  const socialLink = await insertSocialLinkInfo(pgPool, mastodonId, xId).catch((e) => {
+    logger.error(e, 'failed to insert social link info');
+
+    return null;
+  });
+
+  if (!socialLink) {
+    logger.info('Failed to insert social link info');
+    return res.status(401).send({ ok: false });
+  }
+
+  return res.status(200);
+};
+
+export const getSocialId = async (req, res) => {
+  const validateMastodon = await verifyMastodonUser(req);
+
+  if (!validateMastodon) {
+    logger.info('Failed to validate mastodon credentials');
+    return res.status(401).send({ ok: false });
+  }
+
+  const { mastodonId, xId } = req.query;
+
+  if (mastodonId) {
+    logger.info('no mastodon id provided in request');
+
+    const xId = await getMastodonIdFromX(pgPool, mastodonId).catch((e) => {
+      logger.error(e, 'failed to get x from mastodon id');
+      return null;
+    });
+
+    if (!xId) {
+      logger.info('No x id found for mastodon id');
+      return res.status(404).send({ ok: false });
+    }
+
+    return res.status(401).send({ ok: true, xId });
+  } else if (xId) {
+    logger.info('no x id provided in request');
+    const mastodonId = await getXIdFromMastodonId(pgPool, xId).catch((e) => {
+      logger.error(e, 'failed to get mastodon id from x');
+      return null;
+    });
+
+    if (!mastodonId) {
+      logger.info('No mastodon id found for x id');
+      return res.status(404).send({ ok: false });
+    }
+
+    return res.status(401).send({ ok: true, mastodonId });
+  } else {
+    return res.status(400);
+  }
 };

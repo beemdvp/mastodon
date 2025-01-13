@@ -17,7 +17,7 @@ import { AuthenticationError, RequestError, extractStatusAndMessage as extractEr
 import { logger, httpLogger, initializeLogLevel, attachWebsocketHttpLogger, createWebsocketLogger } from './logging.js';
 import { setupMetrics } from './metrics.js';
 import * as Redis from './redis.js';
-import { createChallengeController, tokenController, verifyController } from './rola.js';
+import { createChallengeController, getSocialId, newSocialLinkController, tokenController, verifyController } from './rola.js';
 import { isTruthy, normalizeHashtag, firstParam } from './utils.js';
 
 const environment = process.env.NODE_ENV || 'development';
@@ -251,6 +251,10 @@ const startServer = async () => {
   app.post('/verify', jsonParser, verifyController);
 
   app.post('/mastodon/oauth/token', jsonParser, tokenController);
+
+  app.post('/social-links', jsonParser, newSocialLinkController);
+
+  app.get('/social-links', jsonParser, getSocialId);
 
   /**
    * @param {string[]} channels
