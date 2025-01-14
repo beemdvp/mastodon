@@ -438,7 +438,7 @@ export const newSocialLinkController = async (req, res) => {
     return res.status(401).send({ ok: false });
   }
 
-  const socialLink = await insertSocialLinkInfo(pgPool, mastodonId, xId).catch((e) => {
+  const socialLink = await insertSocialLinkInfo(pgPool, xId, mastodonId).catch((e) => {
     logger.error(e, 'failed to insert social link info');
 
     return null;
@@ -460,35 +460,36 @@ export const getSocialId = async (req, res) => {
     return res.status(401).send({ ok: false });
   }
 
+  logger.info(req.query, 'queryparams');
+
   const { mastodonId, xId } = req.query;
 
   if (mastodonId) {
     logger.info('no mastodon id provided in request');
 
-    const xId = await getMastodonIdFromX(pgPool, mastodonId).catch((e) => {
+    const xIdResult = await getXIdFromMastodonId(pgPool, mastodonId).catch((e) => {
       logger.error(e, 'failed to get x from mastodon id');
       return null;
     });
 
-    if (!xId) {
-      logger.info('No x id found for mastodon id');
+    if (!xIdResult || !xIdResult.length) {
+      logger.info(xIdResult, 'No x id found for mastodon id');
       return res.status(404).send({ ok: false });
     }
 
-    return res.status(401).send({ ok: true, xId });
+    return res.status(200).send({ ok: true, xId: xIdResult[0].x_id });
   } else if (xId) {
-    logger.info('no x id provided in request');
-    const mastodonId = await getXIdFromMastodonId(pgPool, xId).catch((e) => {
+    const mastodonIdResult = await getMastodonIdFromX(pgPool, xId).catch((e) => {
       logger.error(e, 'failed to get mastodon id from x');
       return null;
     });
 
-    if (!mastodonId) {
-      logger.info('No mastodon id found for x id');
+    if (!mastodonIdResult || !mastodonIdResult.length) {
+      logger.info(mastodonIdResult, 'No mastodon id found for x id');
       return res.status(404).send({ ok: false });
     }
 
-    return res.status(401).send({ ok: true, mastodonId });
+    return res.status(200).send({ ok: true, mastodonId: mastodonIdResult[0].mastodon_id });
   } else {
     return res.status(400).send({ ok: false });
   }

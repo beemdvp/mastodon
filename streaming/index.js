@@ -254,7 +254,7 @@ const startServer = async () => {
 
   app.post('/social-links', jsonParser, newSocialLinkController);
 
-  app.get('/social-links', jsonParser, getSocialId);
+  app.get('/social-links', getSocialId);
 
   /**
    * @param {string[]} channels
